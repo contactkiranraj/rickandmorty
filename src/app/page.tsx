@@ -3,49 +3,94 @@ import Link from "next/link";
 import { useState, useEffect, SetStateAction } from "react";
 
 export default function Home(this: any) {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [characters, setCharacters] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [status, setStatus] = useState("")
-  const [url, setUrl] = useState(`https://rickandmortyapi.com/api/character/?page=${currentPage}&name=${searchQuery}`);
+  const [searchQuery, setSearchQuery] = useState("");
+const [characters, setCharacters] = useState([]);
+const [currentPage, setCurrentPage] = useState(1);
+const [totalPages, setTotalPages] = useState(1);
+const [status, setStatus] = useState("");
+const [url, setUrl] = useState(
+  `https://rickandmortyapi.com/api/character/?page=${currentPage}&name=${searchQuery}&status=${status}`
+);
 
-  useEffect(() => {
-    // Function to fetch characters based on search query and pagination
-    const fetchCharacters = async () => {
-      try {
-        setUrl(`https://rickandmortyapi.com/api/character/?page=${currentPage}&name=${searchQuery}&status=${status}`)
-        const res = await fetch(url);
-        const response = await res.json();
-        console.log(url)
-        setCharacters(response.results);
-        setTotalPages(response.info.pages);
-      } catch (error) {
-        console.error('Error fetching characters:', error);
-      }
-    };
-
-    fetchCharacters();
-  }, [searchQuery, currentPage, status]);
-
-  const handleSearch = (e: any) => {
-    setSearchQuery(e.target.value);
-    setCurrentPage(1); // Reset page when a new search is performed
+useEffect(() => {
+  // Function to fetch characters based on search query and pagination
+  const fetchCharacters = async () => {
+    try {
+      const res = await fetch(url);
+      const response = await res.json();
+      console.log(url);
+      setCharacters(response.results);
+      setTotalPages(response.info.pages);
+    } catch (error) {
+      console.error("Error fetching characters:", error);
+    }
   };
-  
+
+  fetchCharacters();
+}, [url]); // Only depend on 'url' in the dependency array
+
+const handleSearch = (e: any) => {
+  try {
+    const value = e.target.value;
+    setSearchQuery(value);
+    setCurrentPage(1); // Reset page when a new search is performed
+    setStatus(""); // Reset status when a new search is performed
+
+    // Use the callback form of setSearchQuery to work with the most recent state
+    setSearchQuery((prevSearchQuery) => {
+      setUrl(
+        `https://rickandmortyapi.com/api/character/?page=1&name=${encodeURIComponent(prevSearchQuery)}`
+      );
+      return value;
+    });
+  } catch (e) {
+    console.error(e);
+  }
+};
+
   const Pagination = ({ totalPages, onPageChange }: any) => (
-    <div>
-      {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
-        <a key={page} onClick={() => onPageChange(page)}>
-          {page}
-        </a>
-      ))}
+    <div className="p-6">
+      <nav aria-label="Page navigation example">
+        <ul className="inline-flex -space-x-px text-sm">
+          {Array.from({ length: totalPages }, (_, index) => index + 1).map(
+            (page) => (
+              <>
+                <li>
+                  <a
+                    href="#"
+                    key={page}
+                    onClick={() => onPageChange(page)}
+                    className="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
+                  >
+                    {page}
+                  </a>
+                </li>
+              </>
+            )
+          )}
+        </ul>
+      </nav>
     </div>
   );
+
+  const handleStatusFilter = (selectedStatus: string) => {
+    setStatus(selectedStatus);
+    setCurrentPage(1); // Reset page when a new status filter is applied
   
+    // Use the callback form of setSearchQuery to work with the most recent state
+    setSearchQuery((prevSearchQuery) => {
+      setUrl(
+        `https://rickandmortyapi.com/api/character/?page=1&name=${encodeURIComponent(prevSearchQuery)}&status=${selectedStatus}`
+      );
+      return prevSearchQuery;
+    });
+  };
+
   const handlePageChange = (newPage: any) => {
     setCurrentPage(newPage);
-    setUrl(`https://rickandmortyapi.com/api/character/?page=${newPage}&name=${searchQuery}&status=${status}`)
+    setUrl(
+      `https://rickandmortyapi.com/api/character/?page=${newPage}&name=${searchQuery}&status=${status}`
+    );
   };
 
   return (
@@ -77,7 +122,7 @@ export default function Home(this: any) {
         <div className="p-6">
           <p className="p-4">Status</p>
           <button
-            onClick={() => setStatus("alive")}
+            onClick={() => handleStatusFilter("alive")}
             type="button"
             className="text-gray-900 hover:text-white border border-gray-800 hover:bg-gray-900 focus:ring-4 focus:outline-none focus:ring-gray-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2 dark:border-gray-600 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-600 dark:focus:ring-gray-800"
           >
@@ -85,14 +130,14 @@ export default function Home(this: any) {
           </button>
           <button
             type="button"
-            onClick={() => setStatus("dead")}
+            onClick={() => handleStatusFilter("dead")}
             className="text-gray-900 hover:text-white border border-gray-800 hover:bg-gray-900 focus:ring-4 focus:outline-none focus:ring-gray-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2 dark:border-gray-600 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-600 dark:focus:ring-gray-800"
           >
             Dead
           </button>
           <button
             type="button"
-            onClick={() => setStatus("unknown")}
+            onClick={() => handleStatusFilter("unknown")}
             className="text-gray-900 hover:text-white border border-gray-800 hover:bg-gray-900 focus:ring-4 focus:outline-none focus:ring-gray-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2 dark:border-gray-600 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-600 dark:focus:ring-gray-800"
           >
             Unknown
@@ -104,14 +149,11 @@ export default function Home(this: any) {
         {characters &&
           characters.map((dataObj: any) => {
             return (
-              <div id={dataObj.id} className="box">
+              <div key={dataObj.id} className="box">
                 <Link href={`/character/${dataObj.id}`}>
                   <div>
                     <div>
-                      <a
-                        href="#"
-                        className="block max-w-sm p-6 bg-white border border-gray-200 rounded-lg shadow hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700"
-                      >
+                      <div className="block max-w-sm p-6 bg-white border border-gray-200 rounded-lg shadow hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700">
                         <img
                           className="h-auto max-w-full rounded-lg"
                           src={dataObj.image}
@@ -124,7 +166,7 @@ export default function Home(this: any) {
                         <p className="font-normal text-gray-700 dark:text-gray-400">
                           {dataObj.species}
                         </p>
-                      </a>
+                      </div>
                     </div>
                   </div>
                 </Link>
