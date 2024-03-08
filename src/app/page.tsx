@@ -4,49 +4,51 @@ import { useState, useEffect, SetStateAction } from "react";
 
 export default function Home(this: any) {
   const [searchQuery, setSearchQuery] = useState("");
-const [characters, setCharacters] = useState([]);
-const [currentPage, setCurrentPage] = useState(1);
-const [totalPages, setTotalPages] = useState(1);
-const [status, setStatus] = useState("");
-const [url, setUrl] = useState(
-  `https://rickandmortyapi.com/api/character/?page=${currentPage}&name=${searchQuery}&status=${status}`
-);
+  const [characters, setCharacters] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [status, setStatus] = useState("");
+  const [url, setUrl] = useState(
+    `https://rickandmortyapi.com/api/character/?page=${currentPage}&name=${searchQuery}&status=${status}`
+  );
 
-useEffect(() => {
-  // Function to fetch characters based on search query and pagination
-  const fetchCharacters = async () => {
+  useEffect(() => {
+    // Function to fetch characters based on search query and pagination
+    const fetchCharacters = async () => {
+      try {
+        const res = await fetch(url);
+        const response = await res.json();
+        console.log(url);
+        setCharacters(response.results);
+        setTotalPages(response.info.pages);
+      } catch (error) {
+        console.error("Error fetching characters:", error);
+      }
+    };
+
+    fetchCharacters();
+  }, [url]); // Only depend on 'url' in the dependency array
+
+  const handleSearch = (e: any) => {
     try {
-      const res = await fetch(url);
-      const response = await res.json();
-      console.log(url);
-      setCharacters(response.results);
-      setTotalPages(response.info.pages);
-    } catch (error) {
-      console.error("Error fetching characters:", error);
+      const value = e.target.value;
+      setSearchQuery(value);
+      setCurrentPage(1); // Reset page when a new search is performed
+      setStatus(""); // Reset status when a new search is performed
+
+      // Use the callback form of setSearchQuery to work with the most recent state
+      setSearchQuery((prevSearchQuery) => {
+        setUrl(
+          `https://rickandmortyapi.com/api/character/?page=1&name=${encodeURIComponent(
+            prevSearchQuery
+          )}`
+        );
+        return value;
+      });
+    } catch (e) {
+      console.error(e);
     }
   };
-
-  fetchCharacters();
-}, [url]); // Only depend on 'url' in the dependency array
-
-const handleSearch = (e: any) => {
-  try {
-    const value = e.target.value;
-    setSearchQuery(value);
-    setCurrentPage(1); // Reset page when a new search is performed
-    setStatus(""); // Reset status when a new search is performed
-
-    // Use the callback form of setSearchQuery to work with the most recent state
-    setSearchQuery((prevSearchQuery) => {
-      setUrl(
-        `https://rickandmortyapi.com/api/character/?page=1&name=${encodeURIComponent(prevSearchQuery)}`
-      );
-      return value;
-    });
-  } catch (e) {
-    console.error(e);
-  }
-};
 
   const Pagination = ({ totalPages, onPageChange }: any) => (
     <div className="p-6">
@@ -76,11 +78,13 @@ const handleSearch = (e: any) => {
   const handleStatusFilter = (selectedStatus: string) => {
     setStatus(selectedStatus);
     setCurrentPage(1); // Reset page when a new status filter is applied
-  
+
     // Use the callback form of setSearchQuery to work with the most recent state
     setSearchQuery((prevSearchQuery) => {
       setUrl(
-        `https://rickandmortyapi.com/api/character/?page=1&name=${encodeURIComponent(prevSearchQuery)}&status=${selectedStatus}`
+        `https://rickandmortyapi.com/api/character/?page=1&name=${encodeURIComponent(
+          prevSearchQuery
+        )}&status=${selectedStatus}`
       );
       return prevSearchQuery;
     });
@@ -93,6 +97,13 @@ const handleSearch = (e: any) => {
     );
   };
 
+  // Function to reset filters
+  const handleResetFilters = () => {
+    setStatus("");
+    setSearchQuery("");
+    setCurrentPage(1);
+    setUrl(`https://rickandmortyapi.com/api/character/?page=1`);
+  };
   return (
     <center>
       <h1 className="mb-4 text-4xl font-extrabold leading-none tracking-tight text-gray-900 md:text-5xl lg:text-6xl">
@@ -141,6 +152,13 @@ const handleSearch = (e: any) => {
             className="text-gray-900 hover:text-white border border-gray-800 hover:bg-gray-900 focus:ring-4 focus:outline-none focus:ring-gray-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2 dark:border-gray-600 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-600 dark:focus:ring-gray-800"
           >
             Unknown
+          </button>
+          <button
+            onClick={handleResetFilters}
+            type="button"
+            className="text-gray-900 hover:text-white border border-gray-800 hover:bg-gray-900 focus:ring-4 focus:outline-none focus:ring-gray-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2 dark:border-gray-600 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-600 dark:focus:ring-gray-800"
+          >
+            Reset Filter
           </button>
         </div>
       </form>
