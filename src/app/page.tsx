@@ -1,76 +1,138 @@
+"use client"; // This is a client component 👈🏽
 import Link from "next/link";
+import { useState, useEffect, SetStateAction } from "react";
 
-async function getCharacters() {
-  const response = await fetch("https://rickandmortyapi.com/api/character")
-    .then((response) => response.json())
-    .catch((error) => {
-      console.log(error);
-    });
-  return response;
-}
+export default function Home(this: any) {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [characters, setCharacters] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [status, setStatus] = useState("")
+  const [url, setUrl] = useState(`https://rickandmortyapi.com/api/character/?page=${currentPage}&name=${searchQuery}`);
 
-function getTableHeader() {
-  return (
-    <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-      <tr>
-        <th scope="col" className="mx-auto px-6 py-3">
-          Image
-        </th>
-        <th scope="col" className="px-6 py-3">
-          Name
-        </th>
-      </tr>
-    </thead>
+  useEffect(() => {
+    // Function to fetch characters based on search query and pagination
+    const fetchCharacters = async () => {
+      try {
+        setUrl(`https://rickandmortyapi.com/api/character/?page=${currentPage}&name=${searchQuery}&status=${status}`)
+        const res = await fetch(url);
+        const response = await res.json();
+        console.log(url)
+        setCharacters(response.results);
+        setTotalPages(response.info.pages);
+      } catch (error) {
+        console.error('Error fetching characters:', error);
+      }
+    };
+
+    fetchCharacters();
+  }, [searchQuery, currentPage, status]);
+
+  const handleSearch = (e: any) => {
+    setSearchQuery(e.target.value);
+    setCurrentPage(1); // Reset page when a new search is performed
+  };
+  
+  const Pagination = ({ totalPages, onPageChange }: any) => (
+    <div>
+      {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
+        <a key={page} onClick={() => onPageChange(page)}>
+          {page}
+        </a>
+      ))}
+    </div>
   );
-}
+  
+  const handlePageChange = (newPage: any) => {
+    setCurrentPage(newPage);
+    setUrl(`https://rickandmortyapi.com/api/character/?page=${newPage}&name=${searchQuery}&status=${status}`)
+  };
 
-function showErrorMessage() {
   return (
-    <h3 className="text-center text-4xl font-medium text-gray-700">
-      Oops! There is something{" "}
-      <span className="font-light text-gray-500">wrong.</span>
-    </h3>
-  );
-}
-
-export default async function Home() {
-  const data = await getCharacters();
-  return (
-    <main className=" justify-between p-6">
-      <h1 className="text-center text-4xl font-medium text-gray-700">
-        Character <span className="font-light text-gray-500">List</span>
+    <center>
+      <h1 className="mb-4 text-4xl font-extrabold leading-none tracking-tight text-gray-900 md:text-5xl lg:text-6xl">
+        Character List
       </h1>
-      <div className="relative overflow-x-auto">
-        <table className="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
-          {data.error ? showErrorMessage() : getTableHeader()}
 
-          {data.results &&
-            data.results.map((character: any, i: number) => {
-              return (
-                <tbody key={character.id}>
-                  <tr className="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
-                    <th
-                      scope="row"
-                      className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white"
-                    >
-                      <img
-                        className="rounded-full"
-                        src={character.image}
-                        height="50px"
-                        width="50px"
-                      ></img>
-                    </th>
-                    <td className="px-6 py-4">
-                      <Link href={`/character/${character.id}`}>
-                        {character.name}
-                      </Link>
-                    </td>
-                  </tr>
-                </tbody>
-              );
-            })}
-        </table>
+      <form className="max-w-md mx-auto">
+        <label
+          htmlFor="default-search"
+          className="mb-2 text-sm font-medium text-gray-900 sr-only dark:text-white"
+        >
+          Type keyword to search
+        </label>
+        <div className="relative">
+          <div className="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none"></div>
+          <input
+            type="search"
+            id="default-search"
+            value={searchQuery}
+            onChange={handleSearch}
+            className="block w-full p-4 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            placeholder="Type keyword to search..."
+            required
+          />
+        </div>
+
+        <div className="p-6">
+          <p className="p-4">Status</p>
+          <button
+            onClick={() => setStatus("alive")}
+            type="button"
+            className="text-gray-900 hover:text-white border border-gray-800 hover:bg-gray-900 focus:ring-4 focus:outline-none focus:ring-gray-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2 dark:border-gray-600 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-600 dark:focus:ring-gray-800"
+          >
+            Alive
+          </button>
+          <button
+            type="button"
+            onClick={() => setStatus("dead")}
+            className="text-gray-900 hover:text-white border border-gray-800 hover:bg-gray-900 focus:ring-4 focus:outline-none focus:ring-gray-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2 dark:border-gray-600 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-600 dark:focus:ring-gray-800"
+          >
+            Dead
+          </button>
+          <button
+            type="button"
+            onClick={() => setStatus("unknown")}
+            className="text-gray-900 hover:text-white border border-gray-800 hover:bg-gray-900 focus:ring-4 focus:outline-none focus:ring-gray-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2 dark:border-gray-600 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-600 dark:focus:ring-gray-800"
+          >
+            Unknown
+          </button>
+        </div>
+      </form>
+
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 p-6">
+        {characters &&
+          characters.map((dataObj: any) => {
+            return (
+              <div id={dataObj.id} className="box">
+                <Link href={`/character/${dataObj.id}`}>
+                  <div>
+                    <div>
+                      <a
+                        href="#"
+                        className="block max-w-sm p-6 bg-white border border-gray-200 rounded-lg shadow hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700"
+                      >
+                        <img
+                          className="h-auto max-w-full rounded-lg"
+                          src={dataObj.image}
+                          alt=""
+                        ></img>
+
+                        <h5 className="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+                          {dataObj.name}
+                        </h5>
+                        <p className="font-normal text-gray-700 dark:text-gray-400">
+                          {dataObj.species}
+                        </p>
+                      </a>
+                    </div>
+                  </div>
+                </Link>
+              </div>
+            );
+          })}
       </div>
-    </main>
+      <Pagination totalPages={totalPages} onPageChange={handlePageChange} />
+    </center>
   );
 }
